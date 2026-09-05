@@ -23,7 +23,7 @@ model SignalKey {
 }
 
 model WorkerLock {
-  id          Int      @id @default(autoincrement())
+  id          Int      @id @default(1)
   workerId    String   @map("worker_id")
   status      String   @default("ACTIVE")
   heartbeatAt DateTime @map("heartbeat_at")

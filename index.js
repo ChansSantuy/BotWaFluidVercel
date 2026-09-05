@@ -1,10 +1,14 @@
+/**
+ * index.js — Local Testing Entry Point
+ * 
+ * Hanya untuk testing lokal. Deployment menggunakan api/worker.js
+ */
+
 require('dotenv').config();
 
 const { createBaileysSocket } = require('./lib/baileys');
 const { acquireLock, updateHeartbeat, releaseLock, logConnectionEvent, HEARTBEAT_INTERVAL_MS } = require('./lib/worker-lock');
 const { getPrismaClient } = require('./lib/database');
-
-const DEADLINE_MARGIN_MS = 10000; // 10 seconds before deadline
 
 function generateWorkerId() {
     return `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -12,18 +16,18 @@ function generateWorkerId() {
 
 async function startBot() {
     const workerId = generateWorkerId();
-    console.log(`[WORKER] Starting worker: ${workerId}`);
+    console.log(`[LOCAL] Starting worker: ${workerId}`);
 
     await logConnectionEvent(workerId, 'FUNCTION_START');
 
     const lockResult = await acquireLock(workerId);
     if (!lockResult.success) {
-        console.log(`[WORKER] ${lockResult.reason}`);
+        console.log(`[LOCAL] ${lockResult.reason}`);
         await logConnectionEvent(workerId, 'LOCK_DENIED');
         return;
     }
 
-    console.log('[WORKER] Lock acquired');
+    console.log('[LOCAL] Lock acquired');
     await logConnectionEvent(workerId, 'LOCK_ACQUIRED');
 
     let sock;
@@ -37,7 +41,7 @@ async function startBot() {
             try {
                 await updateHeartbeat(workerId);
             } catch (err) {
-                console.error('[WORKER] Heartbeat failed:', err);
+                console.error('[LOCAL] Heartbeat failed:', err);
             }
         }, HEARTBEAT_INTERVAL_MS);
 
@@ -48,8 +52,6 @@ async function startBot() {
                 const text = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
                 
                 console.log(`[MESSAGE] Received: ${text} from ${msg.key.remoteJid}`);
-                console.log(`[MESSAGE] Text toLowerCase: "${text.toLowerCase()}"`);
-                console.log(`[MESSAGE] Matches !ping: ${text.toLowerCase() === '!ping'}`);
                 
                 await logConnectionEvent(workerId, 'MESSAGE_RECEIVED', { 
                     from: msg.key.remoteJid,
@@ -68,8 +70,10 @@ async function startBot() {
         process.on('SIGINT', gracefulShutdown);
         process.on('SIGTERM', gracefulShutdown);
 
+        console.log('[LOCAL] Bot running. Press Ctrl+C to stop.');
+
     } catch (error) {
-        console.error('[WORKER] Error:', error);
+        console.error('[LOCAL] Error:', error);
         await logConnectionEvent(workerId, 'ERROR', { error: error.message });
         await cleanup();
     }
@@ -78,8 +82,8 @@ async function startBot() {
         if (isShuttingDown) return;
         isShuttingDown = true;
 
-        console.log('[WORKER] Graceful shutdown initiated');
-        await logConnectionEvent(workerId, 'DEADLINE_WARNING');
+        console.log('\n[LOCAL] Graceful shutdown initiated');
+        await logConnectionEvent(workerId, 'GRACEFUL_DISCONNECT');
 
         await cleanup();
         process.exit(0);
@@ -93,19 +97,23 @@ async function startBot() {
         if (sock) {
             try {
                 sock.end();
-                console.log('[WORKER] Socket closed');
+                console.log('[LOCAL] Socket closed');
             } catch (err) {
-                console.error('[WORKER] Error closing socket:', err);
+                console.error('[LOCAL] Error closing socket:', err);
             }
         }
 
         await releaseLock(workerId);
         await logConnectionEvent(workerId, 'LOCK_RELEASED');
-        console.log('[WORKER] Lock released');
+        console.log('[LOCAL] Lock released');
 
         const prisma = getPrismaClient();
         await prisma.$disconnect();
     }
 }
 
-startBot().catch(console.error);
+if (require.main === module) {
+    startBot().catch(console.error);
+}
+
+module.exports = { startBot };
