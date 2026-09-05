@@ -1,2 +1,0 @@
-# BotWaFluidVercel
-anjay pokok namah

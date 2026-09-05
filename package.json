@@ -1,0 +1,33 @@
+{
+  "name": "sansdev-bot",
+  "version": "1.0.0",
+  "description": "WhatsApp Bot — Vercel + NeonDB POC",
+  "main": "index.js",
+  "scripts": {
+    "start"       : "node index.js",
+    "db:generate" : "prisma generate",
+    "db:push"     : "prisma db push",
+    "db:studio"   : "prisma studio",
+    "setup"       : "npm install && prisma generate && prisma db push"
+  },
+  "keywords": ["whatsapp-bot"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hapi/boom"             : "^10.0.1",
+    "@prisma/client"         : "^7.10.0",
+    "@whiskeysockets/baileys": "^v7.0.0-rc.9",
+    "chalk"                  : "^4.1.2",
+    "dotenv"                 : "^16.6.1",
+    "node-cache"             : "^5.1.2",
+    "pg"                     : "^8.23.0",
+    "pino"                   : "^8.21.0",
+    "qrcode-terminal"        : "^0.12.0"
+  },
+  "devDependencies": {
+    "prisma": "^7.10.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
