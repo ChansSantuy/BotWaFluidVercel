@@ -6,7 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// ── Auth credentials Baileys (satu baris, id selalu 1) ───────────────────────
 model AuthCreds {
   id        Int      @id @default(1)
   data      String   @db.Text
@@ -15,8 +14,6 @@ model AuthCreds {
   @@map("auth_creds")
 }
 
-// ── Signal keys Baileys (key-value dinamis) ──────────────────────────────────
-// id = "{type}__{keyId}"
 model SignalKey {
   id        String   @id
   data      String   @db.Text
@@ -25,13 +22,10 @@ model SignalKey {
   @@map("signal_keys")
 }
 
-// ── Distributed worker lock ───────────────────────────────────────────────────
-// Hanya satu baris ACTIVE yang boleh ada pada satu waktu.
-// status: ACTIVE | RELEASED | EXPIRED
 model WorkerLock {
   id          Int      @id @default(autoincrement())
   workerId    String   @map("worker_id")
-  status      String   @default("ACTIVE")   // ACTIVE | RELEASED | EXPIRED
+  status      String   @default("ACTIVE")
   heartbeatAt DateTime @map("heartbeat_at")
   expiresAt   DateTime @map("expires_at")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -39,17 +33,12 @@ model WorkerLock {
   @@map("worker_lock")
 }
 
-// ── Connection event log ──────────────────────────────────────────────────────
-// Mencatat setiap perubahan lifecycle koneksi untuk monitoring churn.
 model ConnectionEvent {
   id               Int      @id @default(autoincrement())
   workerId         String   @map("worker_id")
-  event            String   // FUNCTION_START | LOCK_ACQUIRED | BAILEYS_CONNECTING |
-                            // BAILEYS_CONNECTED | MESSAGE_RECEIVED | MESSAGE_SENT |
-                            // DEADLINE_WARNING | GRACEFUL_DISCONNECT | LOCK_RELEASED |
-                            // RECONNECT | ERROR
+  event            String
   disconnectReason String?  @map("disconnect_reason")
-  metadata         String?  @db.Text   // JSON string untuk data tambahan
+  metadata         String?  @db.Text
   createdAt        DateTime @default(now()) @map("created_at")
 
   @@map("connection_events")
