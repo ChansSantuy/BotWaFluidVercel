@@ -3,9 +3,5 @@
     "api/worker.js": {
       "maxDuration": 60
     }
-  },
-  "crons": [{
-    "path": "/api/worker",
-    "schedule": "* * * * *"
-  }]
+  }
 }
